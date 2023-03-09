@@ -10,9 +10,8 @@ const createToken = (_id) => {
 
 //register user
 const registerUser = async (req, res) => {
+  const { name, email, password } = req.body;
   try {
-    const { name, email, password } = req.body;
-
     const exist = await userModel.findOne({ email });
 
     if (exist) {
@@ -56,4 +55,36 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser };
+//login user
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json("invalid email or password");
+
+      //compair password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+
+      if (!isValidPassword) {
+        return res.status(400).json("incorrect password");
+      }
+    }
+
+    //create a token
+    const token = createToken(user._id);
+    res.status(200).json({
+      id: user.id,
+      name: user.name,
+      email,
+      password: user.password,
+      token,
+    });
+  } catch (err) {
+    console.log(err.message);
+  }
+};
+
+module.exports = { registerUser, loginUser };
